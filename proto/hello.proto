@@ -1,0 +1,6 @@
+package greetings;
+syntax = 'proto3';
+
+message HelloMsg {
+  required string hello = 1;
+}
