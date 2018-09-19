@@ -1,0 +1,10 @@
+package main;
+syntax = 'proto3';
+
+message Ping {
+  required uint32 index = 1;
+}
+
+message Pong {
+  required uint32 index = 1;
+}
