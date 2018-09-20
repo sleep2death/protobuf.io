@@ -1,7 +1,7 @@
 const net = require('net')
 const assert = require('assert')
 const Server = require('../server/server')
-const helper = require('../lib/socket-helper')
+const easysocket = require('../server/easysocket')
 const protobuf = require('protobufjs')
 
 describe('Server', function () {
@@ -39,16 +39,6 @@ describe('Server', function () {
       client.on('ready', () => {
         done()
       })
-    })
-
-    it('client ping server', done => {
-      protobuf.load('./proto/main.proto', (err, root) => {
-        if (err) throw err
-        var Ping = root.lookupType('main.Ping')
-        var buffer = Ping.encode(Ping.create({ index: 0 })).finish()
-        helper.send(client, 0, buffer)
-      })
-      done()
     })
 
     it('start the server again, will throw a reject', async () => {
