@@ -1,8 +1,6 @@
 const net = require('net')
 const assert = require('assert')
 const Server = require('../server/server')
-const easysocket = require('../server/easysocket')
-const protobuf = require('protobufjs')
 
 describe('Server', function () {
   describe('#start()', function () {
@@ -30,7 +28,7 @@ describe('Server', function () {
     })
 
     it('start the server', async () => {
-      await server.start(3000)
+      await server.start(3001)
       assert.strictEqual(server.tcpServer.listening, true)
     })
 
@@ -44,7 +42,7 @@ describe('Server', function () {
     it('start the server again, will throw a reject', async () => {
       await assert.rejects(async () => {
         await server.start(3000)
-      }, { name: 'Error [ERR_SERVER_ALREADY_LISTEN]' })
+      }, Error)
     })
   })
 })
