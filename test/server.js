@@ -1,6 +1,7 @@
 const net = require('net')
 const assert = require('assert')
 const Server = require('../server/server')
+const Client = require('../server/client')
 
 describe('Server', function () {
   let server = null
@@ -50,6 +51,7 @@ describe('Server', function () {
     it('stop the server', async () => {
       await server.stop()
       assert.strictEqual(server.tcpServer.listening, false)
+      assert.strictEqual(Client.getConnectionsCount(), 0)
     })
 
     it('stop the server again, will throw a reject', async () => {

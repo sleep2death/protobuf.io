@@ -1,4 +1,4 @@
-package main;
+package;
 syntax = 'proto3';
 
 message Ping {

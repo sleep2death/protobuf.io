@@ -1,21 +1,33 @@
-const logger = require('../utils/logger')
 const shortid = require('shortid')
+const logger = require('../utils/logger')
 
 const Client = function (server, conn, id) {
+  this.server = null
+  this.conn = null
+  this.id = null
+
+  this.connected = false
+  // this.init()
+}
+
+Client.prototype.setup = function (server, conn, id) {
   this.server = server
   this.conn = conn
   this.id = id
 
-  this.connected = true
-  this.disconnected = false
+  this.readyState = 'opening'
+  this.checkIntervalTimer = null
+  this.pintTimeoutTimer = null
 
-  this.init()
-}
-
-Client.prototype.init = function () {
   this.conn.on('data', this.ondata.bind(this))
   this.conn.on('error', this.onerror.bind(this))
   this.conn.on('close', this.onclose.bind(this))
+
+  this.onOpen()
+}
+
+Client.prototype.onOpen = function () {
+  this.readyState = 'open'
 }
 
 Client.prototype.close = function () {
@@ -35,8 +47,8 @@ Client.prototype.onerror = function (error) {
 }
 
 Client.prototype.onclose = function () {
-  this.cleanup()
   logger.info('client closed %s', this.id)
+  this.cleanup()
 }
 
 Client.prototype.cleanup = function () {
@@ -44,15 +56,17 @@ Client.prototype.cleanup = function () {
   delete Client.connections[this.id]
 
   this.connected = false
-  this.disconnected = true
 
   this.conn = null
   this.server = null
+
+  Client.pool.recycle(this)
 }
 
 Client.add = function (server, conn) {
   var id = shortid.generate()
-  var client = new Client(server, conn, id)
+  var client = Client.pool.use()
+  client.setup(server, conn, id)
   Client.connections[id] = client
 
   return id
@@ -63,6 +77,14 @@ Client.disconnectAll = function () {
     Client.connections[key].close()
   }
 }
+
+Client.getConnectionsCount = function () {
+  return Object.keys(Client.connections).length
+}
+
+Client.pool = require('deepool').create(() => {
+  return new Client()
+})
 
 Client.connections = {}
 

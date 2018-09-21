@@ -1,4 +1,4 @@
-var easysocket = {
+var packet = {
   _prepareSocket: function (socket) {
     socket.chunck = {
       messageSize: 0,
@@ -8,7 +8,7 @@ var easysocket = {
     }
   },
   send: function (socket, index, pb, callback) {
-    if (!socket.chunk) easysocket._prepareSocket(socket)
+    if (!socket.chunk) packet._prepareSocket(socket)
 
     var buffer = Buffer.from(pb)
     var consolidatedBuffer = Buffer.alloc(8 + buffer.length)
@@ -26,7 +26,7 @@ var easysocket = {
     })
   },
   recieve: function (socket, pb, callback) {
-    if (!socket.chunk) easysocket._prepareSocket(socket)
+    if (!socket.chunk) packet._prepareSocket(socket)
 
     socket.chunck.bufferStack = Buffer.concat([socket.chunck.bufferStack, pb])
 
@@ -49,4 +49,4 @@ var easysocket = {
   }
 }
 
-module.exports = easysocket
+module.exports = packet
