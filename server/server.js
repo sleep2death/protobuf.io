@@ -2,6 +2,7 @@ const net = require('net')
 const logger = require('../utils/logger')
 const Promise = require('bluebird')
 const Client = require('./client')
+const Transport = require('./transport')
 
 const Server = function () {
   this.tcpServer = net.createServer()
@@ -9,26 +10,31 @@ const Server = function () {
 }
 
 // start the server
-Server.prototype.start = function (port = 30001) {
+Server.prototype.start = function (port = 30001, protoPath = './proto/main.proto') {
   return new Promise((resolve, reject) => {
-    // set the port
+    // validate and set the port
     PortAvailable(port).then(port => {
       logger.silly('port' + port + ' is available!')
       this.port = port
 
-      try {
-        this.tcpServer.listen(this.port, () => {
-          logger.info('start listening on %d', this.port)
+      // load the protocols
+      Transport.loadProtocol(protoPath).then(transport => {
+        try {
+          this.tcpServer.listen(this.port, () => {
+            logger.info('start listening on %d', this.port)
 
-          this.tcpServer.on('connection', this.onconnection.bind(this))
-          this.tcpServer.on('error', this.onerror.bind(this))
-          this.tcpServer.on('close', this.onclose.bind(this))
+            this.tcpServer.on('connection', this.onconnection.bind(this))
+            this.tcpServer.on('error', this.onerror.bind(this))
+            this.tcpServer.on('close', this.onclose.bind(this))
 
-          resolve(this)
-        })
-      } catch (error) {
+            resolve(this)
+          })
+        } catch (error) {
+          reject(error)
+        }
+      }).catch(error => {
         reject(error)
-      }
+      })
     }).catch(error => {
       reject(error)
     })
