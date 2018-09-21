@@ -1,5 +1,21 @@
 const winston = require('winston')
 
+function replaceErrors (key, value) {
+  if (value instanceof Buffer) {
+    return value.toString('base64')
+  } else if (value instanceof Error) {
+    var error = {}
+
+    Object.getOwnPropertyNames(value).forEach(function (key) {
+      error[key] = value[key]
+    })
+
+    return error
+  }
+
+  return value
+}
+
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.json(),
@@ -17,7 +33,7 @@ const alignedWithColorsAndTime = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YY-MM-DD HH:mm:ss' }),
   winston.format.splat(),
-  winston.format.align(),
+  // winston.format.align(),
   winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
 )
 

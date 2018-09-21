@@ -1,15 +1,15 @@
 const net = require('net')
 const logger = require('../utils/logger')
 const Promise = require('bluebird')
+const Client = require('./client')
 
 const Server = function () {
-  if (!(this instanceof Server)) {
-    return new Server()
-  }
   this.tcpServer = net.createServer()
+  this.port = 30001
 }
 
-Server.prototype.start = function (port) {
+// start the server
+Server.prototype.start = function (port = 30001) {
   return new Promise((resolve, reject) => {
     // set the port
     PortAvailable(port).then(port => {
@@ -35,16 +35,31 @@ Server.prototype.start = function (port) {
   })
 }
 
+Server.prototype.stop = function () {
+  return new Promise((resolve, reject) => {
+    this.tcpServer.close(error => {
+      if (error) {
+        logger.error(error.message)
+        return reject(error)
+      }
+      resolve(this)
+    })
+
+    Client.disconnectAll()
+  })
+}
+
 Server.prototype.onerror = function (error) {
   logger.error('server error:', error)
 }
 
 Server.prototype.onconnection = function (socket) {
-  logger.info('got a client connected %o', socket.address())
+  var uid = Client.add(this, socket)
+  logger.info('got a client connected %s', uid)
 }
 
 Server.prototype.onclose = function () {
-  logger.error('server closed')
+  logger.info('server closed')
 }
 
 module.exports = Server
