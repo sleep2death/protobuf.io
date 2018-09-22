@@ -1,4 +1,6 @@
 const shortid = require('shortid')
+const util = require('util')
+const EventEmitter = require('events').EventEmitter
 const logger = require('../utils/logger')
 const builder = require('./packet-builder')
 const transport = require('./transport')
@@ -9,11 +11,13 @@ const Client = function () {
   this.conn = null // the socket client ref
   this.id = null // the uid
 
-  this.state = 'idle' // client state
+  this.state = 'closed' // client state
 
   this.checkIntervalTimer = null // interval of checking state
   this.pingTimeoutTimer = null // interval of the ping timeout
 }
+
+util.inherits(Client, EventEmitter)
 
 // set up the client instance, and open the client
 Client.prototype.setup = function (server, conn, id) {
@@ -44,6 +48,7 @@ Client.prototype.ondata = function (data) {
 
 Client.prototype.close = function () {
   try {
+    this.state = 'closing'
     this.conn.destroy()
   } catch (error) {
     logger.error('client [%s] error %s:', this.id, error.message)
@@ -63,7 +68,7 @@ Client.prototype.cleanup = function () {
   this.conn.removeAllListeners()
   delete Client.connections[this.id]
 
-  this.connected = false
+  this.state = 'closed'
 
   this.conn = null
   this.server = null
