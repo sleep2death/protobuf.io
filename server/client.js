@@ -1,7 +1,7 @@
 const shortid = require('shortid')
 const logger = require('../utils/logger')
 
-// client constructor 
+// client constructor
 const Client = function () {
   this.server = null // the server ref
   this.conn = null // the socket client ref

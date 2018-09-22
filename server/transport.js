@@ -1,9 +1,10 @@
 const protobuf = require('protobufjs')
 const Promise = require('bluebird')
+const _ = require('lowdash')
 const logger = require('../utils/logger')
 
 var Transport = {
-  _indexStart: 1000
+  _indexStart: 1000,
   _root: {},
   _index: {},
   _createIndex: function (root) {
@@ -25,10 +26,26 @@ var Transport = {
       })
     })
   },
-  send: function (socket, type, payload) {
+  // send the message to client
+  encode: function (type, payload) {
+    var builder = null
+
+    // find the packet builder
+    if (type && _.isNumber(type)) {
+      builder = Transport._index[type]
+    } else if (type && _.isString(payload)) {
+      builder = Transport._root.lookupType(type)
+    }
+
+    if (!builder) return logger.error('can not find the type: [%s]', type)
+
+    var errMsg = builder.verify(payload)
+    if (errMsg) return logger.error('payload invalid: %s', errMsg)
+
+    // var buffer = builder.encode(builder.create(payload)).finish()
   },
-  receive: function (payload) {
-  },
+  decode: function (type, payload) {
+  }
 }
 
 module.exports = Transport
