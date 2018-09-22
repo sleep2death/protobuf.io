@@ -1,23 +1,25 @@
 const shortid = require('shortid')
 const logger = require('../utils/logger')
 
-const Client = function (server, conn, id) {
-  this.server = null
-  this.conn = null
-  this.id = null
+// client constructor 
+const Client = function () {
+  this.server = null // the server ref
+  this.conn = null // the socket client ref
+  this.id = null // the uid
 
-  this.connected = false
-  // this.init()
+  this.readystate = 'idle' // client state
+
+  this.checkIntervalTimer = null // interval of checking state
+  this.pingTimeoutTimer = null // interval of the ping timeout
 }
 
+// set up the client instance, and open the client
 Client.prototype.setup = function (server, conn, id) {
   this.server = server
   this.conn = conn
   this.id = id
 
   this.readyState = 'opening'
-  this.checkIntervalTimer = null
-  this.pintTimeoutTimer = null
 
   this.conn.on('data', this.ondata.bind(this))
   this.conn.on('error', this.onerror.bind(this))
@@ -30,16 +32,16 @@ Client.prototype.onOpen = function () {
   this.readyState = 'open'
 }
 
+Client.prototype.ondata = function (data) {
+  logger.info(data)
+}
+
 Client.prototype.close = function () {
   try {
     this.conn.destroy()
   } catch (error) {
     logger.error('client [%s] error %s:', this.id, error.message)
   }
-}
-
-Client.prototype.ondata = function (data) {
-  logger.info(data)
 }
 
 Client.prototype.onerror = function (error) {

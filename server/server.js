@@ -20,6 +20,7 @@ Server.prototype.start = function (port = 30001, protoPath = './proto/main.proto
       // load the protocols
       Transport.loadProtocol(protoPath).then(transport => {
         try {
+          // finally start to listen to the port
           this.tcpServer.listen(this.port, () => {
             logger.info('start listening on %d', this.port)
 
@@ -41,6 +42,7 @@ Server.prototype.start = function (port = 30001, protoPath = './proto/main.proto
   })
 }
 
+// stop the server, the promise will not be resolved until all connections are destroyed by 'discnnectAll'
 Server.prototype.stop = function () {
   return new Promise((resolve, reject) => {
     this.tcpServer.close(error => {
@@ -55,21 +57,27 @@ Server.prototype.stop = function () {
   })
 }
 
+// error handler here
 Server.prototype.onerror = function (error) {
+  // TODO: error handler
   logger.error('server error:', error)
 }
 
+// connection handler herer, add the connected socket to client manager
 Server.prototype.onconnection = function (socket) {
   var uid = Client.add(this, socket)
   logger.info('got a client connected %s', uid)
 }
 
+// server close here
 Server.prototype.onclose = function () {
+  // TODO: cleanup
   logger.info('server closed')
 }
 
 module.exports = Server
 
+// check if the port is available or not
 function PortAvailable (port) {
   return new Promise((resolve, reject) => {
     const portReg = /^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$/g
