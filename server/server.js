@@ -2,11 +2,14 @@ const net = require('net')
 const logger = require('../utils/logger')
 const Promise = require('bluebird')
 const Client = require('./client')
-const Transport = require('./transport')
+const builder = require('./packet-builder')
 
 const Server = function () {
   this.tcpServer = net.createServer()
   this.port = 30001
+
+  this.pingInterval = 25000
+  this.pingTimeout = 5000
 }
 
 // start the server
@@ -18,7 +21,7 @@ Server.prototype.start = function (port = 30001, protoPath = './proto/main.proto
       this.port = port
 
       // load the protocols
-      Transport.loadProtocol(protoPath).then(transport => {
+      builder.loadProtocol(protoPath).then(builder => {
         try {
           // finally start to listen to the port
           this.tcpServer.listen(this.port, () => {

@@ -1,51 +1,52 @@
-const protobuf = require('protobufjs')
-const Promise = require('bluebird')
-const _ = require('lowdash')
-const logger = require('../utils/logger')
-
-var Transport = {
-  _indexStart: 1000,
-  _root: {},
-  _index: {},
-  _createIndex: function (root) {
-    var idx = Transport._indexStart
-    for (var key in Transport._root.nested) {
-      var obj = Transport._root.nested[key]
-      Transport._index[idx++] = obj
+var packet = {
+  _prepareSocket: function (socket) {
+    socket.chunck = {
+      messageSize: 0,
+      messageIndex: 0,
+      buffer: Buffer.alloc(0),
+      bufferStack: Buffer.alloc(0)
     }
   },
-  // load the protocols
-  loadProtocol: function (path) {
-    return new Promise((resolve, reject) => {
-      protobuf.load(path, (err, root) => {
-        if (err) reject(err)
-        this._root = root
-        Transport._createIndex(this._root)
-        logger.info('protocol file loaded')
-        resolve(this)
-      })
+  send: function (socket, index, pb, callback) {
+    if (!socket.chunk) packet._prepareSocket(socket)
+
+    var buffer = Buffer.from(pb)
+    var consolidatedBuffer = Buffer.alloc(8 + buffer.length)
+
+    consolidatedBuffer.writeInt32LE(buffer.length, 0)
+    consolidatedBuffer.writeInt32LE(index, 4)
+    buffer.copy(consolidatedBuffer, 8)
+
+    socket.write(consolidatedBuffer, function (err) {
+      if (err) throw err
+
+      if (callback) {
+        callback(socket)
+      }
     })
   },
-  // send the message to client
-  encode: function (type, payload) {
-    var builder = null
+  recieve: function (socket, pb, callback) {
+    if (!socket.chunk) packet._prepareSocket(socket)
 
-    // find the packet builder
-    if (type && _.isNumber(type)) {
-      builder = Transport._index[type]
-    } else if (type && _.isString(payload)) {
-      builder = Transport._root.lookupType(type)
-    }
+    socket.chunck.bufferStack = Buffer.concat([socket.chunck.bufferStack, pb])
 
-    if (!builder) return logger.error('can not find the type: [%s]', type)
+    var reCheck = false
+    do {
+      reCheck = false
+      if (socket.chunck.messageSize === 0 && socket.chunck.bufferStack.length >= 8) {
+        socket.chunck.messageSize = socket.chunck.bufferStack.readInt32LE(0)
+        socket.chunck.messageIndex = socket.chunck.bufferStack.readInt32LE(4)
+      }
 
-    var errMsg = builder.verify(payload)
-    if (errMsg) return logger.error('payload invalid: %s', errMsg)
-
-    // var buffer = builder.encode(builder.create(payload)).finish()
-  },
-  decode: function (type, payload) {
+      if (socket.chunck.messageSize !== 0 && socket.chunck.bufferStack.length >= socket.chunck.messageSize + 8) {
+        var buffer = socket.chunck.bufferStack.slice(8, socket.chunck.messageSize + 8)
+        socket.chunck.messageSize = 0
+        socket.chunck.bufferStack = socket.chunck.bufferStack.slice(buffer.length + 8)
+        callback(socket, socket.chunck.messageIndex, buffer)
+        reCheck = socket.chunck.bufferStack.length > 0
+      }
+    } while (reCheck)
   }
 }
 
-module.exports = Transport
+module.exports = packet

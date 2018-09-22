@@ -2,6 +2,8 @@ const net = require('net')
 const assert = require('assert')
 const Server = require('../server/server')
 const Client = require('../server/client')
+const transport = require('../server/transport')
+const builder = require('../server/packet-builder')
 
 describe('Server', function () {
   let server = null
@@ -35,8 +37,15 @@ describe('Server', function () {
 
     it('connect one client', done => {
       client = net.createConnection(30001)
-      client.on('ready', () => {
-        done()
+      // receive the 'open' data
+      client.on('data', data => {
+        transport.recieve(client, data, (conn, index, buffer) => {
+          assert.strictEqual(index, 1000)
+          var res = builder.decode(index, buffer)
+          assert.strictEqual(res.name, 'open')
+
+          done()
+        })
       })
     })
 
@@ -61,60 +70,3 @@ describe('Server', function () {
     })
   })
 })
-
-// const net = require('net')
-// const Promise = require('bluebird')
-// const assert = require('assert')
-// const Server = require('../server.js')
-// const helper = require('../lib/socket-helper')
-// const pb = require('protobufjs')
-//
-// describe('SocketServer Testing...', function () {
-//   it('#server.start()', async () => {
-//     await Server.start(3000, './proto/main.proto')
-//     assert.strictEqual(Server._server.listening, true)
-//   })
-//
-//   it('#serve one client', async () => {
-//     var socket = await connect()
-//     var pong = await ping(socket, 1)
-//     assert.strictEqual(pong.index, 1)
-//   })
-// })
-//
-// function connect () {
-//   return new Promise((resolve, reject) => {
-//     var socket = net.createConnection(3000, '127.0.0.1', () => {
-//       resolve(socket)
-//     })
-//   })
-// }
-//
-// function ping (socket, index) {
-//   return new Promise((resolve, reject) => {
-//     pb.load('./proto/main.proto', (err, root) => {
-//       if (err) throw err
-//       console.log(root)
-//
-//       var Ping = root.lookupType('main.Ping')
-//       // var Pong = root.lookupType('main.Pong')
-//       var payload = { index }
-//
-//       var errMsg = Ping.verify(payload)
-//       if (errMsg) throw new Error(errMsg)
-//
-//       var msg = Ping.create(payload)
-//       var buffer = Ping.encode(msg).finish()
-//
-//       helper.send(socket, 1001, buffer)
-//
-//       socket.on('data', data => {
-//         helper.recieve(socket, data, (socket, index, buffer) => {
-//           var Pong = root.lookupType('main.Pong')
-//           msg = Pong.decode(buffer)
-//           resolve(msg)
-//         })
-//       })
-//     })
-//   })
-// }

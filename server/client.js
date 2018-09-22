@@ -1,5 +1,7 @@
 const shortid = require('shortid')
 const logger = require('../utils/logger')
+const builder = require('./packet-builder')
+const transport = require('./transport')
 
 // client constructor
 const Client = function () {
@@ -7,7 +9,7 @@ const Client = function () {
   this.conn = null // the socket client ref
   this.id = null // the uid
 
-  this.readystate = 'idle' // client state
+  this.state = 'idle' // client state
 
   this.checkIntervalTimer = null // interval of checking state
   this.pingTimeoutTimer = null // interval of the ping timeout
@@ -19,7 +21,7 @@ Client.prototype.setup = function (server, conn, id) {
   this.conn = conn
   this.id = id
 
-  this.readyState = 'opening'
+  this.state = 'opening'
 
   this.conn.on('data', this.ondata.bind(this))
   this.conn.on('error', this.onerror.bind(this))
@@ -29,7 +31,11 @@ Client.prototype.setup = function (server, conn, id) {
 }
 
 Client.prototype.onOpen = function () {
-  this.readyState = 'open'
+  var msg = builder.encode('open', { id: this.id, pingInterval: this.server.pingInterval, pingTimeout: this.server.pingTimeout })
+  transport.send(this.conn, msg.index, msg.buffer, conn => {
+    this.state = 'open'
+  })
+  // console.log(msg.index, msg.buffer)
 }
 
 Client.prototype.ondata = function (data) {

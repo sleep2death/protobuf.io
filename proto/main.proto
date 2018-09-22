@@ -1,5 +1,15 @@
 syntax = 'proto3';
 
+message open {
+  required string id = 1;
+  required uint32 pingInterval = 2;
+  required uint32 pingTimeout = 3;
+}
+
+message close {
+  required string id = 1;
+}
+
 message ping {
   required uint32 index = 1;
 }
