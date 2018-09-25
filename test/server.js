@@ -1,5 +1,5 @@
 const net = require('net')
-const Server = require('../server').Server
+const Server = require('../index').Server
 const assert = require('assert')
 const logger = require('../server/logger')
 
