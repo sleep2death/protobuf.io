@@ -61,7 +61,7 @@ describe('Server', function () {
         })
       })
     })
-    it('recieve message frome server', done => {
+    it('recieve message from server', done => {
       var socket = net.createConnection(3000)
 
       socket.on('data', data => {
