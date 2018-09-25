@@ -1,7 +1,7 @@
 const protobuf = require('protobufjs')
 const _ = require('lodash')
 
-class transport {
+class Transport {
   constructor () {
     this.protocol = null
     this.indexStart = 1000
@@ -128,8 +128,8 @@ class transport {
   }
 }
 
-transport.protocol = null
-transport.indexStart = 1000
-transport.index = {}
+Transport.protocol = null
+Transport.indexStart = 1000
+Transport.index = {}
 
-module.exports = transport
+module.exports = Transport
