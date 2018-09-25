@@ -1,22 +1,53 @@
-const Server = require('../server/index')
+const net = require('net')
+const Server = require('../lib/server')
+const assert = require('assert')
 const logger = require('../utils/logger')
 
 describe('Server', function () {
+  var server = null
+
   describe('#init()', function () {
-    it('create the server with invalid port', done => {
-      var server = new Server({ port: 'invalid port' })
+    it('new server with invalid port', done => {
+      server = new Server({ port: 'invalid port' })
       // should throw an error event
-      server.on('error', error => {
+      server.once('error', error => {
         logger.silly(error.message)
         done()
       })
     })
 
-    it('create the server', done => {
-      var server = new Server({ port: 3000 })
-      server.on('listening', () => {
+    it('new server', done => {
+      server = new Server({ port: 3000 })
+      server.once('listening', () => {
         done()
       })
+    })
+  })
+
+  describe('#onConnection()', done => {
+    it('get a client connected', done => {
+      net.createConnection(3000)
+      server.once('connection', client => {
+        assert.strictEqual(1, server.clientsCount)
+        done()
+      })
+    })
+    it('get another client connected', done => {
+      net.createConnection(3000)
+      server.once('connection', client => {
+        assert.strictEqual(2, server.clientsCount)
+        done()
+      })
+    })
+  })
+
+  describe('#close()', function () {
+    it('close the server', done => {
+      server.once('close', () => {
+        assert.strictEqual(0, server.clientsCount)
+        done()
+      })
+      server.close()
     })
   })
 })
