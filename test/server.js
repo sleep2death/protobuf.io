@@ -1,72 +1,55 @@
 const net = require('net')
+const Server = require('../lib').Server
 const assert = require('assert')
-const Server = require('../server/server')
-const Client = require('../server/client')
-const transport = require('../server/transport')
-const builder = require('../server/packet-builder')
+const logger = require('../utils/logger')
 
 describe('Server', function () {
-  let server = null
-  let client = null
+  var server = null
 
-  describe('#start()', function () {
-    it('create the server', () => {
-      server = new Server()
-      assert.ok('ok')
-    })
-
-    it('create with an invalid port, will throw an error', async () => {
-      try {
-        await server.start('not a number')
-      } catch (error) {
-        assert.strictEqual(error.message, 'invalid port input')
-      }
-
-      try {
-        // port is between 0 and 65535
-        await server.start(65536)
-      } catch (error) {
-        assert.strictEqual(error.message, 'invalid port input')
-      }
-    })
-
-    it('start the server', async () => {
-      await server.start(30001)
-      assert.strictEqual(server.tcpServer.listening, true)
-    })
-
-    it('connect one client', done => {
-      client = net.createConnection(30001)
-      // receive the 'open' data
-      client.on('data', data => {
-        transport.recieve(client, data, (conn, index, buffer) => {
-          assert.strictEqual(index, 1000)
-          var res = builder.decode(index, buffer)
-          assert.strictEqual(res.name, 'open')
-
-          done()
-        })
+  describe('#init()', function () {
+    it('new server with invalid port', done => {
+      server = new Server({ port: 'invalid port' })
+      server.start()
+      // should throw an error event
+      server.once('error', error => {
+        logger.silly(error.message)
+        done()
       })
     })
 
-    it('start the server again, will throw a reject', async () => {
-      await assert.rejects(async () => {
-        await server.start(30001)
-      }, Error)
+    it('new server', done => {
+      server = new Server({ port: 3000 })
+      server.start()
+      server.once('listening', () => {
+        done()
+      })
     })
   })
 
-  describe('#stop()', function () {
-    it('stop the server', async () => {
-      await server.stop()
-      assert.strictEqual(server.tcpServer.listening, false)
-      assert.strictEqual(Client.getConnectionsCount(), 0)
+  describe('#onConnection()', done => {
+    it('get a client connected', done => {
+      net.createConnection(3000)
+      server.once('connection', client => {
+        assert.strictEqual(1, server.clientsCount)
+        done()
+      })
     })
+    it('get another client connected', done => {
+      net.createConnection(3000)
+      server.once('connection', client => {
+        assert.strictEqual(2, server.clientsCount)
+        done()
+      })
+    })
+  })
 
-    it('stop the server again, will throw a reject', async () => {
-      await assert.rejects(async () => {
-        await server.stop()
-      }, Error)
+  describe('#close()', function () {
+    it('close the server', done => {
+      server.once('close', () => {
+        assert.strictEqual(0, server.clientsCount)
+        done()
+      })
+      server.close()
     })
   })
 })
