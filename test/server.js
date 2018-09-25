@@ -1,7 +1,7 @@
 const net = require('net')
-const Server = require('../lib').Server
+const Server = require('../server').Server
 const assert = require('assert')
-const logger = require('../utils/logger')
+const logger = require('../server/logger')
 
 describe('Server', function () {
   var server = null

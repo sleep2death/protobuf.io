@@ -1,84 +1,88 @@
 const net = require('net')
-const logger = require('../utils/logger')
-const Promise = require('bluebird')
+const logger = require('./logger')
+const EventEmitter = require('events').EventEmitter
+const shortid = require('shortid')
 const Client = require('./client')
-const builder = require('./packet-builder')
+const Transport = require('./transport')
 
-const Server = function () {
-  this.tcpServer = net.createServer()
-  this.port = 30001
+class Server extends EventEmitter {
+  constructor (opts) {
+    super()
 
-  this.pingInterval = 25000
-  this.pingTimeout = 5000
-}
+    opts = opts || {}
 
-// start the server
-Server.prototype.start = function (port = 30001, protoPath = './proto/main.proto') {
-  return new Promise((resolve, reject) => {
-    // validate and set the port
-    PortAvailable(port).then(port => {
-      logger.silly('port' + port + ' is available!')
-      this.port = port
+    this.port = opts.port || 3000
+    this.pingInterval = opts.pingInterval || 25000
+    this.pingTimeout = opts.pintTimeout || 5000
+    this.protocolPath = opts.protocolPath || './proto/main.proto'
 
-      // load the protocols
-      builder.loadProtocol(protoPath).then(builder => {
-        try {
-          // finally start to listen to the port
-          this.tcpServer.listen(this.port, () => {
-            logger.info('start listening on %d', this.port)
+    // clients dictionary
+    this.clients = {}
+    this.clientsCount = 0
 
-            this.tcpServer.on('connection', this.onconnection.bind(this))
-            this.tcpServer.on('error', this.onerror.bind(this))
-            this.tcpServer.on('close', this.onclose.bind(this))
+    this.transport = new Transport()
+  }
 
-            resolve(this)
-          })
-        } catch (error) {
-          reject(error)
-        }
-      }).catch(error => {
-        reject(error)
-      })
-    }).catch(error => {
-      reject(error)
-    })
-  })
-}
+  async start () {
+    try {
+      await PortAvailable(this.port)
+      await this.transport.loadProtocol(this.protocolPath)
+      this._server = net.createServer()
 
-// stop the server, the promise will not be resolved until all connections are destroyed by 'discnnectAll'
-Server.prototype.stop = function () {
-  return new Promise((resolve, reject) => {
-    this.tcpServer.close(error => {
-      if (error) {
-        logger.error(error.message)
-        return reject(error)
+      // bind listeners
+      this._server.on('listening', this.onListening.bind(this))
+      this._server.on('connection', this.onConnection.bind(this))
+      this._server.on('error', this.onError.bind(this))
+      this._server.on('close', this.onClose.bind(this))
+
+      this._server.listen(this.port)
+    } catch (error) {
+      this.emit('error', error)
+    }
+  }
+
+  close () {
+    // closing all clients
+    for (var i in this.clients) {
+      if (this.clients.hasOwnProperty(i)) {
+        this.clients[i].close()
       }
-      resolve(this)
+    }
+    // then close the server
+    // 'close' even will not fire until all clients destoyed
+    this._server.close()
+  }
+
+  onListening () {
+    this.emit('listening', this)
+  }
+
+  onConnection (socket) {
+    var id = shortid.generate()
+
+    var client = new Client(id, this, socket)
+    this.clients[id] = client
+
+    client.once('close', () => {
+      delete this.clients[id]
+      this.clientsCount--
     })
 
-    Client.disconnectAll()
-  })
-}
+    this.clientsCount++
+    this.emit('connection', client)
+  }
 
-// error handler here
-Server.prototype.onerror = function (error) {
-  // TODO: error handler
-  logger.error('server error:', error)
-}
+  onError (error) {
+    logger.error('server error %o', error)
+    this.emit('error', error)
+  }
 
-// connection handler herer, add the connected socket to client manager
-Server.prototype.onconnection = function (socket) {
-  var uid = Client.add(this, socket)
-  logger.info('got a client connected %s', uid)
+  onClose () {
+    this.emit('close')
+    // clean up after the close event fired
+    this._server.removeAllListeners()
+  }
 }
-
-// server close here
-Server.prototype.onclose = function () {
-  // TODO: cleanup
-  logger.info('server closed')
-}
-
-module.exports = Server
 
 // check if the port is available or not
 function PortAvailable (port) {
@@ -95,3 +99,5 @@ function PortAvailable (port) {
       .listen(port)
   })
 }
+
+module.exports = Server
