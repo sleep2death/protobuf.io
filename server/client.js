@@ -42,11 +42,21 @@ class Client extends EventEmitter {
   }
 
   onData (data) {
-    this.server.protocol.recieve(this.socket, data, (socket, index, buffer) => {
-      var msg = this.server.protocol.decode(index, buffer)
+    this.server.transport.recieve(this.socket, data, (socket, index, buffer) => {
+      var msg = this.server.transport.decode(index, buffer)
       if (msg.errMsg) this.onError(msg.errMsg)
       this.emit('message', msg)
     })
+  }
+
+  send (type, payload) {
+    var res = this.server.transport.encode(type, payload)
+    if (res.errMsg) {
+      logger.error(res.errMsg)
+      return
+    }
+
+    this.server.transport.send(this.socket, res)
   }
 
   close (reason) {

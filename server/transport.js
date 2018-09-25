@@ -68,7 +68,9 @@ class transport {
 
     try {
       var msg = builder.decode(buffer)
-      return { msg, name: builder.name }
+      var result = msg.toJSON()
+      result.mType = msg.$type.name
+      return result
     } catch (error) {
       return { errMsg: 'can not decode the buffer: ' + error.message }
     }
@@ -83,15 +85,14 @@ class transport {
     }
   }
 
-  send (client, type, pb, callback) {
-    var socket = client.socket
-    if (!socket.chunk) this._prepareSocket(socket)
+  send (socket, payload, callback) {
+    if (!socket.chunck) this._prepareSocket(socket)
 
-    var buffer = Buffer.from(pb)
+    var buffer = Buffer.from(payload.buffer)
     var consolidatedBuffer = Buffer.alloc(8 + buffer.length)
 
     consolidatedBuffer.writeInt32LE(buffer.length, 0)
-    consolidatedBuffer.writeInt32LE(type, 4) // message type
+    consolidatedBuffer.writeInt32LE(payload.index, 4) // message type
     buffer.copy(consolidatedBuffer, 8)
 
     socket.write(consolidatedBuffer, function (err) {
@@ -103,9 +104,8 @@ class transport {
     })
   }
 
-  revieve (client, pb, callback) {
-    var socket = client.socket
-    if (!socket.chunk) this._prepareSocket(socket)
+  recieve (socket, pb, callback) {
+    if (!socket.chunck) this._prepareSocket(socket)
 
     socket.chunck.bufferStack = Buffer.concat([socket.chunck.bufferStack, pb])
 

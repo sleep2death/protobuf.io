@@ -1,10 +1,7 @@
 syntax = 'proto3';
 
-message open {
-  required string id = 1;
-  required string version = 2;
-  required uint32 pingInterval = 3;
-  required uint32 pingTimeout = 4;
+message handshake {
+  required string session = 1;
 }
 
 message close {
