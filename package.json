@@ -11,7 +11,7 @@
   },
   "name": "protocol.io",
   "description": "a socket server with protocol buffers, inspired by socket.io",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "main": "index.js",
   "directories": {
     "test": "test"
