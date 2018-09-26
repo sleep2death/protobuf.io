@@ -9,24 +9,25 @@
   "devDependencies": {
     "mocha": "^5.2.0"
   },
-  "name": "protocol.io",
+  "name": "protobuf.io",
   "description": "a socket server with protocol buffers, inspired by socket.io",
   "version": "0.3.4",
   "main": "index.js",
   "directories": {
-    "test": "test"
+    "test": "test",
+    "lib": "lib"
   },
   "scripts": {
     "test": "mocha"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sleep2death/protocol.io.git"
+    "url": "git+https://github.com/sleep2death/protobuf.io.git"
   },
   "keywords": [
     "socket",
     "io",
-    "protobuff.io",
+    "protobuf.io",
     "net",
     "server",
     "protocol",
@@ -35,7 +36,7 @@
   "author": "aspirin2d",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/sleep2death/protocol.io/issues"
+    "url": "https://github.com/sleep2death/protobuf.io/issues"
   },
-  "homepage": "https://github.com/sleep2death/protocol.io#readme"
+  "homepage": "https://github.com/sleep2death/protobuf.io#readme"
 }
