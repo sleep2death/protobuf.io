@@ -11,7 +11,7 @@
 // create the new server with options,
 // port is the listening port, default is 3000
 // protocolPath is your proto file path, default is './proto/main.proto'
-const protobuf = require('./index')
+const protobuf = require('protobuf.io')
 var server = new protobuf.Server({ port: 3000, protocolPath: './proto/main.proto' })
 
 // server error handling
@@ -56,4 +56,4 @@ server.start()
 
 ```
 
-UNDER CONSTRUCTION
+STILL UNDER CONSTRUCTION...
