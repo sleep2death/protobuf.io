@@ -1,13 +1,3 @@
-# protobuf.io
-
-[![npm](https://img.shields.io/npm/v/protobuf.io.svg)](https://github.com/sleep2death/protobuf.io)
-[![Build Status](https://travis-ci.com/sleep2death/protobuf.io.svg?branch=master)](https://travis-ci.org/sleep2death/protobuf.io)
-
-**protocol.io** is a simple socket server which sending and recieving data with [protocol buffers](https://developers.google.com/protocol-buffers/).The project is inspired by [socket.io](https://github.com/socketio/socket.io/)
-### Installation
-`npm install protobuf.io --save` or `yarn add protobuf.io`
-### How to use
-```javascript
 // create the new server with options,
 // port is the listening port, default is 3000
 // protocolPath is your proto file path, default is './proto/main.proto'
@@ -42,18 +32,12 @@ server.on('listening', () => {
 
 server.on('connection', client => {
   console.log('a client connected:', client.id)
-  // send a handshake message to client
   client.send('handshake', { session: 'thisisasession' })
   console.log('server send a handhsake message to client:', { session: 'this is a session' })
   client.on('message', msg => {
-    // got a message from client
     console.log('recieved a message from client:', msg)
   })
 })
 
 // start the server
 server.start()
-
-```
-
-UNDER CONSTRUCTION
