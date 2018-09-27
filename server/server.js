@@ -1,9 +1,9 @@
 const net = require('net')
-const logger = require('./logger')
+const logger = require('../utils/logger')
 const EventEmitter = require('events').EventEmitter
 const shortid = require('shortid')
-const Client = require('./client')
-const Transport = require('./transport')
+const Connection = require('./connection')
+const Transport = require('../utils/transport')
 
 class Server extends EventEmitter {
   constructor (opts) {
@@ -16,9 +16,9 @@ class Server extends EventEmitter {
     this.pingTimeout = opts.pintTimeout || 5000
     this.protocolPath = opts.protocolPath || './proto/main.proto'
 
-    // clients dictionary
-    this.clients = {}
-    this.clientsCount = 0
+    // connections dictionary
+    this.connections = {}
+    this.connectionCount = 0
 
     this.transport = new Transport()
   }
@@ -42,14 +42,14 @@ class Server extends EventEmitter {
   }
 
   close () {
-    // closing all clients
-    for (var i in this.clients) {
-      if (this.clients.hasOwnProperty(i)) {
-        this.clients[i].close()
+    // closing all connections
+    for (var i in this.connections) {
+      if (this.connections.hasOwnProperty(i)) {
+        this.connections[i].close()
       }
     }
     // then close the server
-    // 'close' even will not fire until all clients destoyed
+    // 'close' even will not fire until all connection destoyed
     this._server.close()
   }
 
@@ -60,16 +60,16 @@ class Server extends EventEmitter {
   onConnection (socket) {
     var id = shortid.generate()
 
-    var client = new Client(id, this, socket)
-    this.clients[id] = client
+    var conn = new Connection(id, this, socket)
+    this.connections[id] = conn
 
-    client.once('close', () => {
-      delete this.clients[id]
-      this.clientsCount--
+    conn.once('close', () => {
+      delete this.connections[id]
+      this.connectionCount--
     })
 
-    this.clientsCount++
-    this.emit('connection', client)
+    this.connectionCount++
+    this.emit('connection', conn)
   }
 
   onError (error) {

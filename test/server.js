@@ -1,7 +1,7 @@
 const net = require('net')
 const Server = require('../index').Server
 const assert = require('assert')
-const logger = require('../server/logger')
+const logger = require('../utils/logger')
 
 describe('Server', function () {
   var server = null
@@ -29,23 +29,23 @@ describe('Server', function () {
   describe('#onConnection()', done => {
     it('get a client connected', done => {
       net.createConnection(3000)
-      server.once('connection', client => {
-        assert.strictEqual(1, server.clientsCount)
+      server.once('connection', connection => {
+        assert.strictEqual(1, server.connectionCount)
         done()
       })
     })
     it('get another client connected', done => {
       net.createConnection(3000)
-      server.once('connection', client => {
-        assert.strictEqual(2, server.clientsCount)
+      server.once('connection', connection => {
+        assert.strictEqual(2, server.connectionCount)
         done()
       })
     })
     it('send message to server', done => {
       var socket = net.createConnection(3000)
 
-      server.once('connection', client => {
-        assert.strictEqual(3, server.clientsCount)
+      server.once('connection', connection => {
+        assert.strictEqual(3, server.connectionCount)
 
         var payload = server.transport.encode('handshake', { session: 'thisisasession' })
 
@@ -54,7 +54,7 @@ describe('Server', function () {
         server.transport.send(socket, payload)
 
         var callbackTimes = 0
-        client.on('message', msg => {
+        connection.on('message', msg => {
           assert.deepStrictEqual({ mType: 'handshake', session: 'thisisasession' }, msg)
           callbackTimes++
           if (callbackTimes === 3) done()
@@ -77,17 +77,17 @@ describe('Server', function () {
         })
       })
 
-      server.once('connection', client => {
-        assert.strictEqual(4, server.clientsCount)
+      server.once('connection', connection => {
+        assert.strictEqual(4, server.connectionCount)
 
         var payload = server.transport.encode('handshake', { session: 'thisisasession' })
 
         server.transport.send(socket, payload)
-        client.on('message', msg => {
+        connection.on('message', msg => {
           assert.deepStrictEqual({ mType: 'handshake', session: 'thisisasession' }, msg)
         })
 
-        server.clients[client.id].send('ping', { index: 0 })
+        server.connections[connection.id].send('ping', { index: 0 })
       })
     })
   })
@@ -95,7 +95,7 @@ describe('Server', function () {
   describe('#close()', function () {
     it('close the server', done => {
       server.once('close', () => {
-        assert.strictEqual(0, server.clientsCount)
+        assert.strictEqual(0, server.connectionCount)
         done()
       })
       server.close()

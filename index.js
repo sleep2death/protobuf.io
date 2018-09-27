@@ -1,9 +1,7 @@
-const Transport = require('./server/transport')
-const Client = require('./server/client')
+const Transport = require('./utils/transport')
 const Server = require('./server/server')
 
 module.exports = {
   Transport,
-  Client,
   Server
 }
